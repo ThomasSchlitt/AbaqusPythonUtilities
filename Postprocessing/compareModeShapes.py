@@ -10,6 +10,7 @@ ASSUMPTIONS:
     - Assumed view of User-1 has been provided:
         - recommended that user aligns view interactively in Abq/CAE, saves the user-defined view, then
           copies the resulting User-1 definition from the .rpy file into this script
+    - assumes both odbs have been opened within the Abq/CAE session
 
 INPUTS:
     odb_a_fname:    absolute filepath of first odb (String)
@@ -27,9 +28,10 @@ Thomas Schlitt, March 2025
 from abaqus import *
 from abaqusConstants import *
 
-
+'''
+INPUTS:
+'''
 N_MODES = 12  #control for how many comparative modes to post-process
-
 # following should be Absolute Filepaths for two odbs
 odb_a_fname = 'C:/TEMP/model_A.odb'
 odb_b_fname = 'C:/TEMP/model_B.odb'
@@ -42,6 +44,9 @@ session.View(name='User-1', nearPlane=3055.6, farPlane=5360.8, width=2264.5,
                  cameraTarget=(468.39, 697.41, -38.545),
                  viewOffsetX=0,viewOffsetY=0, autoFit=OFF)
 
+'''
+ROUTINE:
+'''
 def compare_modeShapes():
     """
     iteratively plots first 12-modes for two models A + B and saves result to animation directory
@@ -111,7 +116,7 @@ def compare_modeShapes():
         # get odb_a current freq value
         w_a = float( odb_a.steps.values()[0].frames[i].description.split()[-2]  )
         # write left text-annotation
-        comp = 'xyz'[np.argmax(EM_A[i - 1, :])]
+        # comp = 'xyz'[np.argmax(EM_A[i - 1, :])]
         tA = odb_a.userData.Text(name='Text-A',
                                  text=f'Mode #{i} \nFreq = {w_a:.1f} Hz',
                                  offset=(9.96667, 56.9333))
@@ -120,7 +125,7 @@ def compare_modeShapes():
 
         w_b = float(  odb_b.steps.values()[0].frames[i].description.split()[-2] )
         # write right text-annotation
-        comp = 'xyz'[np.argmax(EM_B[i-1, :])]
+        # comp = 'xyz'[np.argmax(EM_B[i-1, :])]
         tB = odb_b.userData.Text(name='Text-B',
                                  text=f'Mode #{i} \nFreq = {w_b:.1f} Hz',
                                  offset=(9.96667, 56.9333))

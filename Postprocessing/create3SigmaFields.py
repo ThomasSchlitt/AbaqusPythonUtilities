@@ -1,7 +1,7 @@
 """Abaqus script used to create 3 Sigma Field response variable for RMISES and RTA and save to temporary session step
 
 ASSUMPTIONS:
-    - user has performed a random vibration analyis with the step name including the tag: '_x' or '_y' to indicate the excitation direction
+    - user has performed a random vibration analysis with the step name including the tag: '_x' or '_y' to indicate the excitation direction
         - e.g. step name = random_vibe_x
 
 INPUTS:
