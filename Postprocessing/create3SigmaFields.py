@@ -18,10 +18,11 @@ Thomas Schlitt, March 2025
 """
 from abaqus import *
 from abaqusConstants import *
+import numpy as np
 
 
 g = 9810 #[mm/s2] used to normalize the acceleration outputs
-field_vars = ['RMISES', 'RTA']
+#field_vars = ['RMISES', 'RTA']
 
 
 def create_3sigma_fields():
@@ -62,10 +63,29 @@ def create_3sigma_fields():
             if i == 0: continue # skip first frame
             load_direction = stp.name.split('_')[-1]
             if 'RMISES' in f.fieldOutputs.keys():
-                scaled_RMISES = f.fieldOutputs['RMISES'] * 3
-                sessionFrame.FieldOutput(name=f'RMISES_3Sigma_{load_direction}',
-                                         description=f'3Sigma Scaled RMISES in {load_direction} direction excitation',
-                                         field=scaled_RMISES)
+                RMISES_fo = f.fieldOutputs['RMISES'].getSubset(position=INTEGRATION_POINT)
+                scaled_RMISES = sessionFrame.FieldOutput(name=f'RMISES_3Sigma_{load_direction}',
+                                                          type=RMISES_fo.type,
+                                                          description=f'3Sigma Scaled RMISES in {load_direction} direction excitation')
+                for RMISES_block in RMISES_fo.bulkDataBlocks:
+                    labels = RMISES_block.elementLabels
+                    _, idxs = np.unique(labels, return_index=True)
+                    labels = labels[np.sort(idxs)]
+
+                    options = dict(
+                        position=INTEGRATION_POINT,
+                        instance=RMISES_block.instance,
+                        labels=labels,  # np.unique(S_block.nodeLabel),
+                        data=  RMISES_block.data * 3  ,
+                    )
+                    if np.any(RMISES_block.sectionPoint):
+                        options["sectionPoint"] = RMISES_block.sectionPoint
+
+                    scaled_RMISES.addData(**options)
+                # scaled_RMISES = f.fieldOutputs['RMISES'] * 3
+                # sessionFrame.FieldOutput(name=f'RMISES_3Sigma_{load_direction}',
+                #                          description=f'3Sigma Scaled RMISES in {load_direction} direction excitation',
+                #                          field=scaled_RMISES)
 
             if 'RTA' in f.fieldOutputs.keys():
                 component = {'x':'1',
@@ -76,6 +96,17 @@ def create_3sigma_fields():
                 sessionFrame.FieldOutput(name=f'RTA{component}_Gs_3Sigma_{load_direction}',
                                          description=f'3Sigma Scaled RTA (Gs) in {load_direction} direction excitation',
                                          field=scaled_RTA)
+
+            if 'RU' in f.fieldOutputs.keys():
+                # component = {'x': '1',
+                #              'y': '2',
+                #              'z': '3'}[load_direction]  # use to swap direction to abaqus global component
+                component = stp.name[-1]
+                scaled_RU = f.fieldOutputs['RU'].getScalarField(componentLabel=f"RU{component}")
+                scaled_RU *= 3
+                sessionFrame.FieldOutput(name=f'RU{component}_3Sigma_{load_direction}',
+                                         description=f'3Sigma RU in {load_direction} direction excitation',
+                                         field=scaled_RU)
 
 
     vp.odbDisplay.setFrame(sessionFrame)
